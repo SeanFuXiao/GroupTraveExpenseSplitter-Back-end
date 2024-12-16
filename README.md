@@ -1,1 +1,0 @@
-# GroupTraveExpenseSplitter-Back-end
