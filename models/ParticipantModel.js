@@ -16,14 +16,8 @@ const ParticipantSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  amount_paid: {
-    type: Number,
-    default: 0,
-  },
-  amount_owed: {
-    type: Number,
-    default: 0,
-  },
+  amount_paid: { type: Number, default: 0 },
+  amount_owed: { type: Number, default: 0 },
 });
 
 module.exports = mongoose.model("Participant", ParticipantSchema);
