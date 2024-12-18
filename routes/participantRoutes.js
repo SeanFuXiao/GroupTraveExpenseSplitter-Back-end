@@ -1,17 +1,18 @@
 const express = require("express");
-const router = express.Router();
 const {
   addParticipant,
-  getTripParticipants,
-  getBillParticipants,
+  getParticipantsByTrip,
+  updateParticipantPayment,
   deleteParticipant,
-  deleteParticipantsByBillId,
 } = require("../controllers/participantController");
+const authMiddleware = require("../middlewares/authMiddleware");
 
-router.post("/", addParticipant);
-router.get("/trip/:trip_id", getTripParticipants);
-router.get("/bill/:bill_id", getBillParticipants);
-router.delete("/:id", deleteParticipant);
-router.delete("/bill/:bill_id", deleteParticipantsByBillId);
+const router = express.Router();
+
+// Protected
+router.post("/", authMiddleware, addParticipant);
+router.get("/trip/:trip_id", authMiddleware, getParticipantsByTrip);
+router.put("/:id", authMiddleware, updateParticipantPayment);
+router.delete("/:id", authMiddleware, deleteParticipant);
 
 module.exports = router;
