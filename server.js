@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("API port is running");
+  res.send("HERE is API port, it is running");
 });
 
 //Routes
@@ -19,7 +19,6 @@ app.get("/", (req, res) => {
 //=====================================================
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/trips", require("./routes/tripRoutes"));
-
 app.use("/api/bills", require("./routes/billRoutes"));
 app.use("/api/participants", require("./routes/participantRoutes"));
 //=====================================================

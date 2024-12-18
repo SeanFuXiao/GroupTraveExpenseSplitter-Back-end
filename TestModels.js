@@ -84,18 +84,18 @@ const testParticipant = async () => {
 
 // runTests();
 
-// const clearDatabase = async () => {
-//     const User = require('./models/UserModel');
-//     const Trip = require('./models/TripModel');
-//     const Bill = require('./models/BillModel');
-//     const Participant = require('./models/ParticipantModel');
+const clearDatabase = async () => {
+  const User = require("./models/UserModel");
+  const Trip = require("./models/TripModel");
+  const Bill = require("./models/BillModel");
+  const Participant = require("./models/ParticipantModel");
 
-//     await User.deleteMany({});
-//     await Trip.deleteMany({});
-//     await Bill.deleteMany({});
-//     await Participant.deleteMany({});
+  await User.deleteMany({});
+  await Trip.deleteMany({});
+  await Bill.deleteMany({});
+  await Participant.deleteMany({});
 
-//     console.log('All test data has been cleared.');
-// };
+  console.log("All test data has been cleared.");
+};
 
-// clearDatabase();
+clearDatabase();

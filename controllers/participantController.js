@@ -1,96 +1,79 @@
 const Participant = require("../models/ParticipantModel");
+const Trip = require("../models/TripModel");
 
-// Create
-// Create
+// Create Participant
+// Create Participant
 
 exports.addParticipant = async (req, res) => {
   try {
-    const { trip_id, bill_id, user_id, amount_paid, amount_owed } = req.body;
-
-    if (!trip_id || !user_id) {
-      return res.json({ error: "Trip ID and User ID required" });
-    }
-
-    const participant = new Participant({
-      trip_id,
-      bill_id,
-      user_id,
-      amount_paid,
-      amount_owed,
-    });
-
+    const { trip_id, user_id } = req.body;
+    const participant = new Participant({ trip_id, user_id });
     await participant.save();
+
+    const trip = await Trip.findById(trip_id);
+    if (!trip) return res.json({ error: "Trip not found" });
+
+    trip.participants.push(user_id);
+    await trip.save();
+
     res.json({ message: "Participant added", participant });
   } catch (err) {
     res.json({ error: err.message });
   }
 };
 
-// Get
-// Get
-exports.getTripParticipants = async (req, res) => {
+// Get all Partocoant bt Trip
+// Get all Partocoant bt Trip
+
+exports.getParticipantsByTrip = async (req, res) => {
   try {
-    const { trip_id } = req.params;
-    const participants = await Participant.find({ trip_id }).populate(
-      "user_id",
-      "username"
-    );
+    const participants = await Participant.find({
+      trip_id: req.params.trip_id,
+    }).populate("user_id", "username");
     res.json(participants);
   } catch (err) {
     res.json({ error: err.message });
   }
 };
 
-// Get by bill
-// Get by bill
+// Update
+// Update
 
-exports.getBillParticipants = async (req, res) => {
+exports.updateParticipantPayment = async (req, res) => {
   try {
-    const { bill_id } = req.params;
-    const participants = await Participant.find({ bill_id }).populate(
-      "user_id",
-      "username"
-    );
-    res.json(participants);
+    const { amount_paid } = req.body;
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) return res.json({ error: "Participant not found" });
+
+    participant.amount_paid = amount_paid;
+    participant.balance = amount_paid - participant.amount_owed;
+    await participant.save();
+
+    res.json({ message: "Participant payment updated", participant });
   } catch (err) {
     res.json({ error: err.message });
   }
 };
 
-// Delete by id
-// Delete by id
+// Delete
+// Delete
 
 exports.deleteParticipant = async (req, res) => {
   try {
-    const deletedParticipant = await Participant.findByIdAndDelete(
-      req.params.id
-    );
-    if (!deletedParticipant) {
-      return res.json({ error: "Participant not found" });
+    const participant = await Participant.findById(req.params.id);
+    if (!participant) return res.json({ error: "Participant not found" });
+
+    await participant.deleteOne();
+
+    const trip = await Trip.findById(participant.trip_id);
+    if (trip) {
+      trip.participants = trip.participants.filter(
+        (p) => p.toString() !== participant.user_id.toString()
+      );
+      await trip.save();
     }
+
     res.json({ message: "Participant deleted" });
-  } catch (err) {
-    res.json({ error: err.message });
-  }
-};
-
-// delete by bill id
-// delete by bill id
-
-exports.deleteParticipantsByBillId = async (req, res) => {
-  try {
-    const { bill_id } = req.params;
-
-    const result = await Participant.deleteMany({ bill_id });
-
-    if (result.deletedCount === 0) {
-      return res.json({ error: "No participants found" });
-    }
-
-    res.json({
-      message: "Participants deleted",
-      deletedCount: result.deletedCount,
-    });
   } catch (err) {
     res.json({ error: err.message });
   }
