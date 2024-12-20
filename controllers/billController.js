@@ -1,6 +1,9 @@
 const Bill = require("../models/BillModel");
 const Trip = require("../models/TripModel");
 
+const Participant = require("../models/ParticipantModel");
+
+
 // Create Bill
 // Create Bill
 
