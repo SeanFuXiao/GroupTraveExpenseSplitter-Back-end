@@ -4,12 +4,17 @@ const Participant = require("../models/ParticipantModel");
 
 // Create Trip
 // Create Trip
-
 exports.createTrip = async (req, res) => {
   try {
-    const { user_id, name, start_date, end_date } = req.body;
+    const { name, start_date, end_date } = req.body;
 
-    const trip = new Trip({ user_id, name, start_date, end_date });
+    const trip = new Trip({
+      user_id: req.user.id,
+      name,
+      start_date,
+      end_date,
+    });
+
     await trip.save();
 
     res.json({ message: "Trip created", trip });
@@ -21,9 +26,18 @@ exports.createTrip = async (req, res) => {
 // Get All Trip
 // Get All Trip
 
+// Get All Trips for a Specific User
 exports.getAllTrips = async (req, res) => {
   try {
-    const trips = await Trip.find().populate("user_id", "username");
+    const trips = await Trip.find({ user_id: req.user.id }).populate(
+      "user_id",
+      "username"
+    );
+
+    if (!trips.length) {
+      return res.status(404).json({ message: "No trips found for this user" });
+    }
+
     res.json(trips);
   } catch (err) {
     res.json({ error: err.message });
