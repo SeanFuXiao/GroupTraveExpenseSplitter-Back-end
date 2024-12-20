@@ -70,11 +70,16 @@ exports.getTripDetails = async (req, res) => {
       .populate("user_id", "username")
       .populate("participants", "username");
 
-    if (!trip) return res.status(404).json({ error: "Trip not found" });
+    if (!trip) return res.json({ error: "Trip not found" });
 
-    const bills = await Bill.find({ trip_id: trip._id });
+    const bills = await Bill.find({ trip_id: trip._id }).populate(
+      "payer_id",
+      "username"
+    );
 
-    const totalCost = bills.reduce((sum, bill) => sum + bill.amount, 0);
+    const totalCost = bills.length
+      ? bills.reduce((sum, bill) => sum + bill.amount, 0)
+      : 0;
 
     res.json({
       id: trip._id,
@@ -86,11 +91,18 @@ exports.getTripDetails = async (req, res) => {
         id: p._id,
         username: p.username,
       })),
+      bills: bills.map((bill) => ({
+        id: bill._id,
+        description: bill.description,
+        amount: bill.amount,
+        payer: bill.payer_id?.username || "Unknown",
+      })),
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 // Update
 // Update
 
@@ -119,13 +131,16 @@ exports.deleteTrip = async (req, res) => {
     const trip = await Trip.findById(req.params.id);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
 
+    // 删除关联数据
     await Bill.deleteMany({ trip_id: trip._id });
     await Participant.deleteMany({ trip_id: trip._id });
+
+    // 删除 Trip
     await trip.deleteOne();
 
     res.json({ message: "Trip and related data deleted" });
   } catch (err) {
-    res.json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 };
 
