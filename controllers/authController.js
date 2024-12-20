@@ -102,17 +102,19 @@ exports.checkUsernameExists = async (req, res) => {
     const { username } = req.params;
 
     if (!username) {
-      return res.json({ error: "Username is required." });
+      return res.status(400).json({ error: "Username is required." });
     }
 
     const user = await User.findOne({ username });
 
     if (user) {
-      return res.status(200).json({ exists: true });
+      return res.status(200).json({ id: user._id, username: user.username });
     } else {
-      return res.status(404).json({ exists: false });
+      return res.status(404).json({ error: "User not found." });
     }
   } catch (error) {
-    res.json({ error: "An error occurred while checking the username." });
+    res
+      .status(500)
+      .json({ error: "An error occurred while checking the username." });
   }
 };
