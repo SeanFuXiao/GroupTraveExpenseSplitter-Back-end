@@ -6,21 +6,28 @@ const Participant = require("../models/ParticipantModel");
 // Create Trip
 exports.createTrip = async (req, res) => {
   try {
-    const { name, start_date, end_date } = req.body;
+    const { name, start_date, end_date, participants } = req.body;
+
+    const participantsObjectIds = await Promise.all(
+      participants.map(async (username) => {
+        const user = await User.findOne({ username });
+        if (!user) throw new Error(`User not found: ${username}`);
+        return user._id;
+      })
+    );
 
     const trip = new Trip({
       user_id: req.user.id,
       name,
       start_date,
       end_date,
-      participants: participantIds,
+      participants: participantsObjectIds,
     });
 
     await trip.save();
-
     res.json({ message: "Trip created", trip });
   } catch (err) {
-    res.json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 };
 
