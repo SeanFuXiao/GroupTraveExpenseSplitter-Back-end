@@ -72,18 +72,7 @@ exports.getTripDetails = async (req, res) => {
 
     if (!trip) return res.status(404).json({ error: "Trip not found" });
 
-    const bills = await Bill.find({ trip_id: trip._id }).populate(
-      "payer_id",
-      "username"
-    );
-
-    const formattedBills = bills.map((bill) => ({
-      id: bill._id,
-      description: bill.description || "No Description",
-      amount: bill.amount || 0,
-      payer: bill.payer_id?.username || "Unknown",
-    }));
-
+    const bills = await Bill.find({ trip_id: trip._id });
     const totalCost = bills.reduce((sum, bill) => sum + bill.amount, 0);
 
     const participants = await Participant.find({ trip_id: trip._id }).populate(
@@ -94,10 +83,23 @@ exports.getTripDetails = async (req, res) => {
     const balances = participants.map((participant) => ({
       user_id: participant.user_id._id,
       username: participant.user_id.username,
-      amount_paid: participant.amount_paid || 0,
-      amount_owed: participant.amount_owed || 0,
-      balance: (participant.amount_paid || 0) - (participant.amount_owed || 0),
+      amount_paid: participant.amount_paid,
+      amount_owed: participant.amount_owed,
+      balance: participant.amount_paid - participant.amount_owed,
     }));
+
+   
+    const billsWithPayer = await Promise.all(
+      bills.map(async (bill) => {
+        const payer = await User.findById(bill.payer_id);
+        return {
+          id: bill._id,
+          description: bill.description,
+          amount: bill.amount,
+          payer: payer ? payer.username : "Unknown",
+        };
+      })
+    );
 
     res.json({
       id: trip._id,
@@ -109,8 +111,8 @@ exports.getTripDetails = async (req, res) => {
         id: p._id,
         username: p.username,
       })),
-      bills: formattedBills,
-      balances: balances,
+      bills: billsWithPayer, 
+      balances,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

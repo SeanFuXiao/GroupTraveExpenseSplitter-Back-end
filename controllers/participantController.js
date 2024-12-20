@@ -33,7 +33,6 @@ exports.addParticipant = async (req, res) => {
       });
     }
 
-    // 添加到 Participant 集合
     const participant = new Participant({
       trip_id,
       user_id: user._id,
@@ -43,9 +42,8 @@ exports.addParticipant = async (req, res) => {
     });
     await participant.save();
 
-    // 确保 Trip 的 participants 数组更新
     if (!trip.participants.includes(user._id)) {
-      trip.participants.push(user._id); // 添加 user_id 到 Trip
+      trip.participants.push(user._id);
       await trip.save();
     }
 
