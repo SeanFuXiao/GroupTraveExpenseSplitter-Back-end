@@ -70,16 +70,37 @@ exports.getTripDetails = async (req, res) => {
       .populate("user_id", "username")
       .populate("participants", "username");
 
-    if (!trip) return res.json({ error: "Trip not found" });
+    if (!trip) return res.status(404).json({ error: "Trip not found" });
 
+    // 获取账单信息
     const bills = await Bill.find({ trip_id: trip._id }).populate(
       "payer_id",
       "username"
     );
 
-    const totalCost = bills.length
-      ? bills.reduce((sum, bill) => sum + bill.amount, 0)
-      : 0;
+    const formattedBills = bills.map((bill) => ({
+      id: bill._id,
+      description: bill.description || "No Description",
+      amount: bill.amount || 0,
+      payer: bill.payer_id?.username || "Unknown",
+    }));
+
+    const totalCost = bills.reduce((sum, bill) => sum + bill.amount, 0);
+
+    // 查询所有参与者信息
+    const participants = await Participant.find({ trip_id: trip._id }).populate(
+      "user_id",
+      "username"
+    );
+
+    // 计算 balances
+    const balances = participants.map((participant) => ({
+      user_id: participant.user_id._id,
+      username: participant.user_id.username,
+      amount_paid: participant.amount_paid || 0,
+      amount_owed: participant.amount_owed || 0,
+      balance: (participant.amount_paid || 0) - (participant.amount_owed || 0),
+    }));
 
     res.json({
       id: trip._id,
@@ -91,18 +112,13 @@ exports.getTripDetails = async (req, res) => {
         id: p._id,
         username: p.username,
       })),
-      bills: bills.map((bill) => ({
-        id: bill._id,
-        description: bill.description,
-        amount: bill.amount,
-        payer: bill.payer_id?.username || "Unknown",
-      })),
+      bills: formattedBills,
+      balances: balances, // 返回 balances 数据
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
-
 // Update
 // Update
 
