@@ -137,17 +137,17 @@ exports.deleteTrip = async (req, res) => {
   try {
     const tripId = req.params.id;
 
-    // 删除与该 Trip 相关的 Participants
+    
     await Participant.deleteMany({ trip_id: tripId });
 
-    // 删除 Trip 本身
+   
     const trip = await Trip.findByIdAndDelete(tripId);
     if (!trip) {
       return res.status(404).json({ error: "Trip not found" });
     }
 
     res
-      .status(200)
+      
       .json({ message: "Trip and related participants deleted successfully" });
   } catch (error) {
     console.error("Error deleting trip:", error);
