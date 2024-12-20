@@ -1,27 +1,61 @@
-const Participant = require("../models/ParticipantModel");
 const Trip = require("../models/TripModel");
-
+const User = require("../models/UserModel");
 // Create Participant
 // Create Participant
 
 exports.addParticipant = async (req, res) => {
   try {
-    const { trip_id, user_id } = req.body;
-    const participant = new Participant({ trip_id, user_id });
+    const { trip_id, username } = req.body;
+
+    // 确认 Trip 是否存在
+    const trip = await Trip.findById(trip_id);
+    if (!trip) {
+      return res.status(404).json({ error: "Trip not found" });
+    }
+
+    // 确认 User 是否存在
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ error: `Participant username '${username}' does not exist.` });
+    }
+
+    // 检查是否已是该 Trip 的参与者
+    const existingParticipant = await Participant.findOne({
+      trip_id,
+      user_id: user._id,
+    });
+    if (existingParticipant) {
+      return res.status(400).json({
+        error: `Participant '${username}' already added to this trip.`,
+      });
+    }
+
+    // 添加到 Participant 集合
+    const participant = new Participant({
+      trip_id,
+      user_id: user._id,
+      amount_paid: 0,
+      amount_owed: 0,
+      balance: 0,
+    });
     await participant.save();
 
-    const trip = await Trip.findById(trip_id);
-    if (!trip) return res.json({ error: "Trip not found" });
+    // 确保 Trip 的 participants 数组更新
+    if (!trip.participants.includes(user._id)) {
+      trip.participants.push(user._id); // 添加 user_id 到 Trip
+      await trip.save();
+    }
 
-    trip.participants.push(user_id);
-    await trip.save();
-
-    res.json({ message: "Participant added", participant });
+    res.json({ message: "Participant added successfully", participant });
   } catch (err) {
-    res.json({ error: err.message });
+    console.error("Error in addParticipant:", err.message);
+    res
+      .status(500)
+      .json({ error: "An error occurred while adding participant." });
   }
 };
-
 // Get all Partocoant bt Trip
 // Get all Partocoant bt Trip
 

@@ -1,6 +1,5 @@
 const Trip = require("../models/TripModel");
 const Bill = require("../models/BillModel");
-const Participant = require("../models/ParticipantModel");
 const User = require("../models/UserModel");
 
 // Create Trip
@@ -8,11 +7,16 @@ exports.createTrip = async (req, res) => {
   try {
     const { name, start_date, end_date, participants } = req.body;
 
-    if (!participants.every((id) => mongoose.Types.ObjectId.isValid(id))) {
-      return res.status(400).json({ error: "Invalid participant ID(s)" });
-    }
+    const participantsObjectIds = await Promise.all(
+      participants.map(async (username) => {
+        const user = await User.findOne({ username });
+        if (!user) throw new Error(`User not found: ${username}`);
+        return user._id;
+      })
+    );
 
-    const newTrip = new Trip({
+    const trip = new Trip({
+      user_id: req.user.id,
       name,
       start_date,
       end_date,
@@ -61,16 +65,34 @@ exports.getTripDetails = async (req, res) => {
       .populate("user_id", "username")
       .populate("participants", "username");
 
-    if (!trip) return res.json({ error: "Trip not found" });
+    if (!trip) return res.status(404).json({ error: "Trip not found" });
 
     const bills = await Bill.find({ trip_id: trip._id }).populate(
       "payer_id",
       "username"
     );
 
-    const totalCost = bills.length
-      ? bills.reduce((sum, bill) => sum + bill.amount, 0)
-      : 0;
+    const formattedBills = bills.map((bill) => ({
+      id: bill._id,
+      description: bill.description || "No Description",
+      amount: bill.amount || 0,
+      payer: bill.payer_id?.username || "Unknown",
+    }));
+
+    const totalCost = bills.reduce((sum, bill) => sum + bill.amount, 0);
+
+    const participants = await Participant.find({ trip_id: trip._id }).populate(
+      "user_id",
+      "username"
+    );
+
+    const balances = participants.map((participant) => ({
+      user_id: participant.user_id._id,
+      username: participant.user_id.username,
+      amount_paid: participant.amount_paid || 0,
+      amount_owed: participant.amount_owed || 0,
+      balance: (participant.amount_paid || 0) - (participant.amount_owed || 0),
+    }));
 
     res.json({
       id: trip._id,
@@ -82,19 +104,17 @@ exports.getTripDetails = async (req, res) => {
         id: p._id,
         username: p.username,
       })),
-      bills: bills.map((bill) => ({
-        id: bill._id,
-        description: bill.description,
-        amount: bill.amount,
-        payer: bill.payer_id?.username || "Unknown",
-      })),
+      bills: formattedBills,
+      balances: balances,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// Update Trip
+// Update
+// Update
+
 exports.updateTrip = async (req, res) => {
   try {
     const { name, start_date, end_date } = req.body;
