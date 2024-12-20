@@ -26,19 +26,27 @@ exports.createTrip = async (req, res) => {
 // Get All Trip
 // Get All Trip
 
-// Get All Trips for a Specific User
 exports.getAllTrips = async (req, res) => {
   try {
-    const trips = await Trip.find({ user_id: req.user.id }).populate(
-      "user_id",
-      "username"
-    );
+    const trips = await Trip.find({ user_id: req.user.id })
+      .populate("user_id", "username")
+      .populate("participants", "username")
+      .select("_id name start_date end_date user_id participants");
 
     if (!trips.length) {
       return res.status(404).json({ message: "No trips found for this user" });
     }
 
-    res.json(trips);
+    const formattedTrips = trips.map((trip) => ({
+      id: trip._id,
+      user_id: trip.user_id,
+      name: trip.name,
+      start_date: trip.start_date,
+      end_date: trip.end_date,
+      participants: trip.participants.map((p) => p.username),
+    }));
+
+    res.json(formattedTrips);
   } catch (err) {
     res.json({ error: err.message });
   }
@@ -53,16 +61,20 @@ exports.getTripDetails = async (req, res) => {
       .populate("user_id", "username")
       .populate("participants", "username");
 
-    if (!trip) return res.json({ error: "Trip not found" });
+    if (!trip) return res.status(404).json({ error: "Trip not found" });
 
     const bills = await Bill.find({ trip_id: trip._id });
-    trip.total_cost = bills.reduce((sum, bill) => sum + bill.amount, 0);
+
+    const totalCost = bills.reduce((sum, bill) => sum + bill.amount, 0);
 
     const participants = await Participant.find({ trip_id: trip._id }).populate(
       "user_id",
       "username"
     );
-    const perPersonCost = trip.total_cost / participants.length;
+
+    const perPersonCost = participants.length
+      ? totalCost / participants.length
+      : 0;
 
     const updatedParticipants = participants.map((participant) => {
       const balance = participant.amount_paid - perPersonCost;
@@ -75,16 +87,15 @@ exports.getTripDetails = async (req, res) => {
     });
 
     res.json({
-      trip: {
-        name: trip.name,
-        total_cost: trip.total_cost,
-        start_date: trip.start_date,
-        end_date: trip.end_date,
-      },
+      id: trip._id,
+      name: trip.name,
+      total_cost: totalCost,
+      start_date: trip.start_date,
+      end_date: trip.end_date,
       participants: updatedParticipants,
     });
   } catch (err) {
-    res.json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 };
 
