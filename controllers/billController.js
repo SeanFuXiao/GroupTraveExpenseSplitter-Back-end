@@ -7,25 +7,24 @@ const Participant = require("../models/ParticipantModel");
 
 exports.createBill = async (req, res) => {
   try {
-    const { trip_id, payer_id, amount, category, description } = req.body;
+    const { trip_id, payer_id, amount, description } = req.body;
 
     const trip = await Trip.findById(trip_id).populate("participants");
-    if (!trip) return res.json({ error: "Trip not found" });
+    if (!trip) return res.status(404).json({ error: "Trip not found" });
 
     const bill = new Bill({
       trip_id,
       payer_id,
       amount,
-      category,
       description,
     });
     await bill.save();
 
+  
     trip.total_cost += amount;
     await trip.save();
 
     const participants = await Participant.find({ trip_id });
-
     const splitAmount = amount / participants.length;
 
     for (const participant of participants) {
@@ -37,12 +36,11 @@ exports.createBill = async (req, res) => {
       await participant.save();
     }
 
-    res.json({ message: "Bill created and amounts updated", bill });
+    res.status(201).json({ message: "Bill created and amounts updated", bill });
   } catch (err) {
-    res.json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 };
-
 // Get all Bills
 // Get all Bills
 
@@ -77,7 +75,7 @@ exports.getBillById = async (req, res) => {
 
 exports.updateBill = async (req, res) => {
   try {
-    const { amount, category, description } = req.body;
+    const { amount, description } = req.body;
     const bill = await Bill.findById(req.params.id);
 
     if (!bill) return res.json({ error: "Bill not found" });
@@ -101,7 +99,6 @@ exports.updateBill = async (req, res) => {
     trip.total_cost -= bill.amount;
 
     bill.amount = amount || bill.amount;
-    bill.category = category || bill.category;
     bill.description = description || bill.description;
     await bill.save();
 
