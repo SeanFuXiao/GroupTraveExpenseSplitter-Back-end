@@ -13,7 +13,7 @@ exports.createTrip = async (req, res) => {
       name,
       start_date,
       end_date,
-      Participant,
+      participants: participantIds,
     });
 
     await trip.save();
