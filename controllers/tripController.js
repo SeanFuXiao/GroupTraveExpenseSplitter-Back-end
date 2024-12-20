@@ -10,9 +10,9 @@ exports.createTrip = async (req, res) => {
     const { name, start_date, end_date, participants } = req.body;
 
     const participantsObjectIds = await Promise.all(
-      participants.map(async (userId) => {
-        const user = await User.findById(userId);
-        if (!user) throw new Error(`User not found: ${userId}`);
+      participants.map(async (username) => {
+        const user = await User.findOne({ username });
+        if (!user) throw new Error(`User not found: ${username}`);
         return user._id;
       })
     );
