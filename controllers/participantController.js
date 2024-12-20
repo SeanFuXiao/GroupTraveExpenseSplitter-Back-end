@@ -1,4 +1,3 @@
-const Participant = require("../models/ParticipantModel");
 const Trip = require("../models/TripModel");
 const User = require("../models/UserModel");
 // Create Participant

@@ -1,6 +1,5 @@
 const Trip = require("../models/TripModel");
 const Bill = require("../models/BillModel");
-const Participant = require("../models/ParticipantModel");
 const User = require("../models/UserModel");
 
 // Create Trip
