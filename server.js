@@ -2,13 +2,23 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/connectMongoDB");
-
+const User = require("./models/UserModel");
 const app = express();
 
 connectDB();
 
 app.use(cors());
 app.use(express.json());
+
+app.get("/api/auth/exists/:username", async (req, res) => {
+  const { username } = req.params;
+  const user = await User.findOne({ username });
+  if (user) {
+    res.json({ exists: true, id: user.id, username: user.username });
+  } else {
+    res.json({ exists: false });
+  }
+});
 
 app.get("/", (req, res) => {
   res.send("HERE is API port, it is running");
