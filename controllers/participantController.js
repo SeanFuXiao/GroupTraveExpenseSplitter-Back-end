@@ -1,27 +1,55 @@
 const Participant = require("../models/ParticipantModel");
 const Trip = require("../models/TripModel");
-
+const User = require("../models/UserModel");
 // Create Participant
 // Create Participant
 
 exports.addParticipant = async (req, res) => {
   try {
-    const { trip_id, user_id } = req.body;
-    const participant = new Participant({ trip_id, user_id });
-    await participant.save();
+    const { trip_id, username } = req.body;
 
     const trip = await Trip.findById(trip_id);
-    if (!trip) return res.json({ error: "Trip not found" });
+    if (!trip) {
+      return res.status(404).json({ error: "Trip not found" });
+    }
 
-    trip.participants.push(user_id);
-    await trip.save();
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ error: "Participant username does not exist." });
+    }
 
-    res.json({ message: "Participant added", participant });
+    const existingParticipant = await Participant.findOne({
+      trip_id,
+      user_id: user._id,
+    });
+    if (existingParticipant) {
+      return res
+        .status(400)
+        .json({ error: "Participant already added to this trip." });
+    }
+
+    const participant = new Participant({
+      trip_id,
+      user_id: user._id,
+      amount_paid: 0,
+      amount_owed: 0,
+      balance: 0,
+    });
+    await participant.save();
+
+    if (!trip.participants.includes(user._id)) {
+      trip.participants.push(user._id);
+      await trip.save();
+    }
+
+    res.json({ message: "Participant added successfully", participant });
   } catch (err) {
-    res.json({ error: err.message });
+    console.error("Error in addParticipant:", err.message);
+    res.status(500).json({ error: err.message });
   }
 };
-
 // Get all Partocoant bt Trip
 // Get all Partocoant bt Trip
 
