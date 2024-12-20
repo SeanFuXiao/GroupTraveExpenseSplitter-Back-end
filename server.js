@@ -24,6 +24,33 @@ app.get("/", (req, res) => {
   res.send("HERE is API port, it is running");
 });
 
+app.post("/api/trips", async (req, res) => {
+  const { name, start_date, end_date, participants } = req.body;
+
+  try {
+    for (const participantId of participants) {
+      if (!mongoose.Types.ObjectId.isValid(participantId)) {
+        return res
+          .status(400)
+          .json({ error: `Invalid participant ID: ${participantId}` });
+      }
+    }
+
+    const trip = new Trip({
+      name,
+      start_date,
+      end_date,
+      participants,
+    });
+
+    await trip.save();
+    res.status(201).json(trip);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to create trip" });
+  }
+});
+
 //Routes
 //Routes
 //=====================================================
