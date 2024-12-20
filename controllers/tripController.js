@@ -72,7 +72,6 @@ exports.getTripDetails = async (req, res) => {
 
     if (!trip) return res.status(404).json({ error: "Trip not found" });
 
-    // 获取账单信息
     const bills = await Bill.find({ trip_id: trip._id }).populate(
       "payer_id",
       "username"
@@ -87,13 +86,11 @@ exports.getTripDetails = async (req, res) => {
 
     const totalCost = bills.reduce((sum, bill) => sum + bill.amount, 0);
 
-    // 查询所有参与者信息
     const participants = await Participant.find({ trip_id: trip._id }).populate(
       "user_id",
       "username"
     );
 
-    // 计算 balances
     const balances = participants.map((participant) => ({
       user_id: participant.user_id._id,
       username: participant.user_id.username,
@@ -113,7 +110,7 @@ exports.getTripDetails = async (req, res) => {
         username: p.username,
       })),
       bills: formattedBills,
-      balances: balances, // 返回 balances 数据
+      balances: balances,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

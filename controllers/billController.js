@@ -23,7 +23,11 @@ exports.createBill = async (req, res) => {
     trip.total_cost += amount;
     await trip.save();
 
-    const participants = await Participant.find({ trip_id });
+    const participants = await Participant.find({ trip_id }).populate(
+      "user_id",
+      "username"
+    );
+
     if (!participants || participants.length === 0) {
       return res
         .status(404)
@@ -33,12 +37,10 @@ exports.createBill = async (req, res) => {
     const splitAmount = amount / participants.length;
 
     for (const participant of participants) {
-      if (String(participant.user_id) === String(payer_id)) {
+      if (participant.user_id._id.toString() === payer_id) {
         participant.amount_paid += amount;
       }
-
       participant.amount_owed += splitAmount;
-
       participant.balance = participant.amount_paid - participant.amount_owed;
       await participant.save();
     }
