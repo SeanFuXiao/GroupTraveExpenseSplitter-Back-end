@@ -67,33 +67,15 @@ exports.getAllTrips = async (req, res) => {
 exports.getTripDetails = async (req, res) => {
   try {
     const trip = await Trip.findById(req.params.id)
-      .populate("user_id", "username")
-      .populate("participants", "username");
+      .populate("user_id", "username") // 填充 user_id 的 username 字段
+      .populate("participants", "username"); // 填充 participants 的 username
 
     if (!trip) return res.status(404).json({ error: "Trip not found" });
 
+    // 获取相关账单并计算总费用
     const bills = await Bill.find({ trip_id: trip._id });
 
     const totalCost = bills.reduce((sum, bill) => sum + bill.amount, 0);
-
-    const participants = await Participant.find({ trip_id: trip._id }).populate(
-      "user_id",
-      "username"
-    );
-
-    const perPersonCost = participants.length
-      ? totalCost / participants.length
-      : 0;
-
-    const updatedParticipants = participants.map((participant) => {
-      const balance = participant.amount_paid - perPersonCost;
-      return {
-        username: participant.user_id.username,
-        amount_paid: participant.amount_paid,
-        amount_owed: perPersonCost,
-        balance,
-      };
-    });
 
     res.json({
       id: trip._id,
@@ -101,13 +83,15 @@ exports.getTripDetails = async (req, res) => {
       total_cost: totalCost,
       start_date: trip.start_date,
       end_date: trip.end_date,
-      participants: updatedParticipants,
+      participants: trip.participants.map((p) => ({
+        id: p._id,
+        username: p.username,
+      })),
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
-
 // Update
 // Update
 
@@ -145,3 +129,47 @@ exports.deleteTrip = async (req, res) => {
     res.json({ error: err.message });
   }
 };
+
+// exports.getTripDetails = async (req, res) => {
+//   try {
+//     const trip = await Trip.findById(req.params.id)
+//       .populate("user_id", "username")
+//       .populate("participants", "username");
+
+//     if (!trip) return res.status(404).json({ error: "Trip not found" });
+
+//     const bills = await Bill.find({ trip_id: trip._id });
+
+//     const totalCost = bills.reduce((sum, bill) => sum + bill.amount, 0);
+
+//     const participants = await Participant.find({ trip_id: trip._id }).populate(
+//       "user_id",
+//       "username"
+//     );
+
+//     const perPersonCost = participants.length
+//       ? totalCost / participants.length
+//       : 0;
+
+//     const updatedParticipants = participants.map((participant) => {
+//       const balance = participant.amount_paid - perPersonCost;
+//       return {
+//         username: participant.user_id.username,
+//         amount_paid: participant.amount_paid,
+//         amount_owed: perPersonCost,
+//         balance,
+//       };
+//     });
+
+//     res.json({
+//       id: trip._id,
+//       name: trip.name,
+//       total_cost: totalCost,
+//       start_date: trip.start_date,
+//       end_date: trip.end_date,
+//       participants: updatedParticipants,
+//     });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
