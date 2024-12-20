@@ -3,7 +3,6 @@ const Bill = require("../models/BillModel");
 const User = require("../models/UserModel");
 
 // Create Trip
-// Create Trip
 exports.createTrip = async (req, res) => {
   try {
     const { name, start_date, end_date, participants } = req.body;
@@ -21,19 +20,18 @@ exports.createTrip = async (req, res) => {
       name,
       start_date,
       end_date,
-      participants: participantsObjectIds,
+      participants,
     });
 
-    await trip.save();
-    res.json({ message: "Trip created", trip });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    await newTrip.save();
+    res.status(201).json(newTrip);
+  } catch (error) {
+    console.error("Error creating trip:", error);
+    res.status(500).json({ error: "Failed to create trip" });
   }
 };
 
-// Get All Trip
-// Get All Trip
-
+// Get All Trips
 exports.getAllTrips = async (req, res) => {
   try {
     const trips = await Trip.find({ user_id: req.user.id })
@@ -60,9 +58,7 @@ exports.getAllTrips = async (req, res) => {
   }
 };
 
-// Get Trip Detail
-// Get Trip Detail
-
+// Get Trip Details
 exports.getTripDetails = async (req, res) => {
   try {
     const trip = await Trip.findById(req.params.id)
@@ -117,6 +113,7 @@ exports.getTripDetails = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
 // Update
 // Update
 
@@ -137,27 +134,28 @@ exports.updateTrip = async (req, res) => {
   }
 };
 
-// Delete
-// Delete
-
+// Delete Trip
 exports.deleteTrip = async (req, res) => {
   try {
-    const trip = await Trip.findById(req.params.id);
-    if (!trip) return res.status(404).json({ error: "Trip not found" });
+    const tripId = req.params.id;
 
-    // 删除关联数据
-    await Bill.deleteMany({ trip_id: trip._id });
-    await Participant.deleteMany({ trip_id: trip._id });
+    
+    await Participant.deleteMany({ trip_id: tripId });
 
-    // 删除 Trip
-    await trip.deleteOne();
+   
+    const trip = await Trip.findByIdAndDelete(tripId);
+    if (!trip) {
+      return res.status(404).json({ error: "Trip not found" });
+    }
 
-    res.json({ message: "Trip and related data deleted" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res
+      
+      .json({ message: "Trip and related participants deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting trip:", error);
+    res.status(500).json({ error: error.message });
   }
 };
-
 // exports.getTripDetails = async (req, res) => {
 //   try {
 //     const trip = await Trip.findById(req.params.id)
