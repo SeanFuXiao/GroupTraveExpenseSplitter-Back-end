@@ -4,37 +4,30 @@ const Participant = require("../models/ParticipantModel");
 const User = require("../models/UserModel");
 
 // Create Trip
-// Create Trip
 exports.createTrip = async (req, res) => {
   try {
     const { name, start_date, end_date, participants } = req.body;
 
-    const participantsObjectIds = await Promise.all(
-      participants.map(async (username) => {
-        const user = await User.findOne({ username });
-        if (!user) throw new Error(`User not found: ${username}`);
-        return user._id;
-      })
-    );
+    if (!participants.every((id) => mongoose.Types.ObjectId.isValid(id))) {
+      return res.status(400).json({ error: "Invalid participant ID(s)" });
+    }
 
-    const trip = new Trip({
-      user_id: req.user.id,
+    const newTrip = new Trip({
       name,
       start_date,
       end_date,
-      participants: participantsObjectIds,
+      participants,
     });
 
-    await trip.save();
-    res.json({ message: "Trip created", trip });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    await newTrip.save();
+    res.status(201).json(newTrip);
+  } catch (error) {
+    console.error("Error creating trip:", error);
+    res.status(500).json({ error: "Failed to create trip" });
   }
 };
 
-// Get All Trip
-// Get All Trip
-
+// Get All Trips
 exports.getAllTrips = async (req, res) => {
   try {
     const trips = await Trip.find({ user_id: req.user.id })
@@ -61,9 +54,7 @@ exports.getAllTrips = async (req, res) => {
   }
 };
 
-// Get Trip Detail
-// Get Trip Detail
-
+// Get Trip Details
 exports.getTripDetails = async (req, res) => {
   try {
     const trip = await Trip.findById(req.params.id)
@@ -103,9 +94,7 @@ exports.getTripDetails = async (req, res) => {
   }
 };
 
-// Update
-// Update
-
+// Update Trip
 exports.updateTrip = async (req, res) => {
   try {
     const { name, start_date, end_date } = req.body;
@@ -123,27 +112,28 @@ exports.updateTrip = async (req, res) => {
   }
 };
 
-// Delete
-// Delete
-
+// Delete Trip
 exports.deleteTrip = async (req, res) => {
   try {
-    const trip = await Trip.findById(req.params.id);
-    if (!trip) return res.status(404).json({ error: "Trip not found" });
+    const tripId = req.params.id;
 
-    // 删除关联数据
-    await Bill.deleteMany({ trip_id: trip._id });
-    await Participant.deleteMany({ trip_id: trip._id });
+    // 删除与该 Trip 相关的 Participants
+    await Participant.deleteMany({ trip_id: tripId });
 
-    // 删除 Trip
-    await trip.deleteOne();
+    // 删除 Trip 本身
+    const trip = await Trip.findByIdAndDelete(tripId);
+    if (!trip) {
+      return res.status(404).json({ error: "Trip not found" });
+    }
 
-    res.json({ message: "Trip and related data deleted" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res
+      .status(200)
+      .json({ message: "Trip and related participants deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting trip:", error);
+    res.status(500).json({ error: error.message });
   }
 };
-
 // exports.getTripDetails = async (req, res) => {
 //   try {
 //     const trip = await Trip.findById(req.params.id)
