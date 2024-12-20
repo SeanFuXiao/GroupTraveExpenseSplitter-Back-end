@@ -95,3 +95,24 @@ exports.deleteUser = async (req, res) => {
     res.json({ error: err.message });
   }
 };
+// Verify
+// Verify
+exports.checkUsernameExists = async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    if (!username) {
+      return res.json({ error: "Username is required." });
+    }
+
+    const user = await User.findOne({ username });
+
+    if (user) {
+      return res.status(200).json({ exists: true });
+    } else {
+      return res.status(404).json({ exists: false });
+    }
+  } catch (error) {
+    res.json({ error: "An error occurred while checking the username." });
+  }
+};
