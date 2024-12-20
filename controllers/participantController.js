@@ -1,6 +1,7 @@
 const Participant = require("../models/ParticipantModel");
 const Trip = require("../models/TripModel");
 const User = require("../models/UserModel");
+const mongoose = require("mongoose");
 // Create Participant
 // Create Participant
 
