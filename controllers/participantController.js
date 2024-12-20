@@ -1,4 +1,3 @@
-const Participant = require("../models/ParticipantModel");
 const Trip = require("../models/TripModel");
 const User = require("../models/UserModel");
 const mongoose = require("mongoose");
@@ -9,26 +8,29 @@ exports.addParticipant = async (req, res) => {
   try {
     const { trip_id, username } = req.body;
 
+    // 确认 Trip 是否存在
     const trip = await Trip.findById(trip_id);
     if (!trip) {
       return res.status(404).json({ error: "Trip not found" });
     }
 
+    // 确认 User 是否存在
     const user = await User.findOne({ username });
     if (!user) {
       return res
         .status(404)
-        .json({ error: "Participant username does not exist." });
+        .json({ error: `Participant username '${username}' does not exist.` });
     }
 
+    // 检查是否已是该 Trip 的参与者
     const existingParticipant = await Participant.findOne({
       trip_id,
       user_id: user._id,
     });
     if (existingParticipant) {
-      return res
-        .status(400)
-        .json({ error: "Participant already added to this trip." });
+      return res.status(400).json({
+        error: `Participant '${username}' already added to this trip.`,
+      });
     }
 
     const participant = new Participant({
@@ -48,7 +50,9 @@ exports.addParticipant = async (req, res) => {
     res.json({ message: "Participant added successfully", participant });
   } catch (err) {
     console.error("Error in addParticipant:", err.message);
-    res.status(500).json({ error: err.message });
+    res
+      .status(500)
+      .json({ error: "An error occurred while adding participant." });
   }
 };
 // Get all Partocoant bt Trip
