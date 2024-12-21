@@ -1,6 +1,5 @@
 const Bill = require("../models/BillModel");
 const Trip = require("../models/TripModel");
-const Participant = require("../models/ParticipantModel");
 const mongoose = require("mongoose");
 
 // Create Bill
