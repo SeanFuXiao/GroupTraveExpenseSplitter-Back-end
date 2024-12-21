@@ -21,34 +21,27 @@ exports.createBill = async (req, res) => {
       return res.status(404).json({ error: "Trip not found" });
     }
 
-    // const bill = new Bill({ trip_id, payer_id, amount, description });
-    // await bill.save();
-
-    trip.total_cost += amount;
-    await trip.save();
-
-    // const participants = await Participant.find({ trip_id }).populate(
-    //   "user_id",
-    //   "username"
-    // );
-
-    const participants = await Participant.find({ trip_id });
-    if (!participants || participants.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No participants found for this trip" });
-    }
-
     const bill = new Bill({ trip_id, payer_id, amount, description });
     await bill.save();
 
     trip.total_cost += amount;
     await trip.save();
 
+    const participants = await Participant.find({ trip_id }).populate(
+      "user_id",
+      "username"
+    );
+
+    if (!participants || participants.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No participants found for this trip" });
+    }
+
     const splitAmount = amount / participants.length;
 
     for (const participant of participants) {
-      if (participant.user_id.toString() === payer_id) {
+      if (participant.user_id._id.toString() === payer_id) {
         participant.amount_paid += amount;
       }
       participant.amount_owed += splitAmount;
