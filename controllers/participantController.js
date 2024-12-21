@@ -1,4 +1,3 @@
-const Participant = require("../models/ParticipantModel");
 const Trip = require("../models/TripModel");
 const User = require("../models/UserModel");
 
@@ -9,32 +8,39 @@ exports.addParticipant = async (req, res) => {
   try {
     const { trip_id, username } = req.body;
 
+
     if (!trip_id || !username) {
       return res
         .status(400)
         .json({ error: "Trip ID and username are required" });
     }
 
+
     const trip = await Trip.findById(trip_id);
     if (!trip) {
       return res.status(404).json({ error: "Trip not found" });
     }
 
+    // 确认 User 是否存在
     const user = await User.findOne({ username });
     if (!user) {
       return res
         .status(404)
+
         .json({ error: "Participant username does not exist" });
     }
+
 
     const existingParticipant = await Participant.findOne({
       trip_id,
       user_id: user._id,
     });
     if (existingParticipant) {
+
       return res
         .status(409)
         .json({ error: "Participant already exists for this trip" });
+
     }
 
     const participant = new Participant({
@@ -56,7 +62,9 @@ exports.addParticipant = async (req, res) => {
       .json({ message: "Participant added successfully", participant });
   } catch (err) {
     console.error("Error in addParticipant:", err.message);
+
     res.status(500).json({ error: "Server error adding participant" });
+
   }
 };
 // Get all Partocoant bt Trip

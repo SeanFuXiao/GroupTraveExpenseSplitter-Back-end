@@ -1,13 +1,20 @@
 const Bill = require("../models/BillModel");
 const Trip = require("../models/TripModel");
+
 const mongoose = require("mongoose");
+
 
 // Create Bill
 // Create Bill
+
+const Participant = require("../models/ParticipantModel");
+const Trip = require("../models/TripModel");
+const Bill = require("../models/BillModel");
 
 exports.createBill = async (req, res) => {
   try {
     const { trip_id, payer_id, amount, description } = req.body;
+
 
     if (!trip_id || !payer_id || !amount) {
       return res.status(400).json({ error: "Required fields are missing" });
@@ -29,16 +36,24 @@ exports.createBill = async (req, res) => {
       "username"
     );
 
+
+    const participants = await Participant.find({ trip_id });
     if (!participants || participants.length === 0) {
       return res
         .status(404)
         .json({ error: "No participants found for this trip" });
     }
 
+    const bill = new Bill({ trip_id, payer_id, amount, description });
+    await bill.save();
+
+    trip.total_cost += amount;
+    await trip.save();
+
     const splitAmount = amount / participants.length;
 
     for (const participant of participants) {
-      if (participant.user_id._id.toString() === payer_id) {
+      if (participant.user_id.toString() === payer_id) {
         participant.amount_paid += amount;
       }
       participant.amount_owed += splitAmount;
@@ -46,10 +61,13 @@ exports.createBill = async (req, res) => {
       await participant.save();
     }
 
+
     res.status(201).json({ message: "Bill created and amounts updated", bill });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ error: "Server error creating bill" });
+
+
   }
 };
 // Get all Bills
