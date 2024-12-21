@@ -9,6 +9,10 @@ exports.createTrip = async (req, res) => {
   try {
     const { name, start_date, end_date, participants } = req.body;
 
+    if (!name || !start_date || !end_date) {
+      return res.status(400).json({ error: "Required fields are missing" });
+    }
+
     const participantsObjectIds = await Promise.all(
       participants.map(async (userId) => {
         const user = await User.findById(userId);
@@ -26,9 +30,10 @@ exports.createTrip = async (req, res) => {
     });
 
     await trip.save();
-    res.json({ message: "Trip created", trip });
+    res.status(201).json({ message: "Trip created", trip });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err.message);
+    res.status(500).json({ error: "Server error creating trip" });
   }
 };
 
@@ -144,11 +149,9 @@ exports.deleteTrip = async (req, res) => {
     const trip = await Trip.findById(req.params.id);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
 
-    // 删除关联数据
     await Bill.deleteMany({ trip_id: trip._id });
     await Participant.deleteMany({ trip_id: trip._id });
 
-    // 删除 Trip
     await trip.deleteOne();
 
     res.json({ message: "Trip and related data deleted" });

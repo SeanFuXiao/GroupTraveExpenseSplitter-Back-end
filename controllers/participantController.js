@@ -1,13 +1,19 @@
 const Participant = require("../models/ParticipantModel");
 const Trip = require("../models/TripModel");
 const User = require("../models/UserModel");
-const mongoose = require("mongoose");
+
 // Create Participant
 // Create Participant
 
 exports.addParticipant = async (req, res) => {
   try {
     const { trip_id, username } = req.body;
+
+    if (!trip_id || !username) {
+      return res
+        .status(400)
+        .json({ error: "Trip ID and username are required" });
+    }
 
     const trip = await Trip.findById(trip_id);
     if (!trip) {
@@ -18,7 +24,7 @@ exports.addParticipant = async (req, res) => {
     if (!user) {
       return res
         .status(404)
-        .json({ error: "Participant username does not exist." });
+        .json({ error: "Participant username does not exist" });
     }
 
     const existingParticipant = await Participant.findOne({
@@ -27,8 +33,8 @@ exports.addParticipant = async (req, res) => {
     });
     if (existingParticipant) {
       return res
-        .status(400)
-        .json({ error: "Participant already added to this trip." });
+        .status(409)
+        .json({ error: "Participant already exists for this trip" });
     }
 
     const participant = new Participant({
@@ -45,10 +51,12 @@ exports.addParticipant = async (req, res) => {
       await trip.save();
     }
 
-    res.json({ message: "Participant added successfully", participant });
+    res
+      .status(201)
+      .json({ message: "Participant added successfully", participant });
   } catch (err) {
     console.error("Error in addParticipant:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Server error adding participant" });
   }
 };
 // Get all Partocoant bt Trip

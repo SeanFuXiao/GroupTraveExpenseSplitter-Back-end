@@ -11,15 +11,16 @@ exports.createBill = async (req, res) => {
     const { trip_id, payer_id, amount, description } = req.body;
 
     if (!trip_id || !payer_id || !amount) {
-      return res.status(400).json({ error: "Required fields are missing." });
+      return res.status(400).json({ error: "Required fields are missing" });
     }
 
     const trip = await Trip.findById(trip_id);
-    if (!trip) return res.status(404).json({ error: "Trip not found" });
+    if (!trip) {
+      return res.status(404).json({ error: "Trip not found" });
+    }
 
     const bill = new Bill({ trip_id, payer_id, amount, description });
     await bill.save();
-    console.log(`Bill created: ${bill._id}`);
 
     trip.total_cost += amount;
     await trip.save();
@@ -32,7 +33,7 @@ exports.createBill = async (req, res) => {
     if (!participants || participants.length === 0) {
       return res
         .status(404)
-        .json({ error: "No participants found for this trip." });
+        .json({ error: "No participants found for this trip" });
     }
 
     const splitAmount = amount / participants.length;
@@ -46,12 +47,10 @@ exports.createBill = async (req, res) => {
       await participant.save();
     }
 
-    res.json({ message: "Bill created and amounts updated", bill });
+    res.status(201).json({ message: "Bill created and amounts updated", bill });
   } catch (err) {
     console.error(err.message);
-    res
-      .status(500)
-      .json({ error: "An error occurred while creating the bill." });
+    res.status(500).json({ error: "Server error creating bill" });
   }
 };
 // Get all Bills
