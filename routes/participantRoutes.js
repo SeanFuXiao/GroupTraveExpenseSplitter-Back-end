@@ -9,7 +9,7 @@ const authMiddleware = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
-// Protected
+// Protected Routes
 router.post("/", authMiddleware, addParticipant);
 router.get("/trip/:trip_id", authMiddleware, getParticipantsByTrip);
 router.put("/:id", authMiddleware, updateParticipantPayment);

@@ -7,6 +7,10 @@ exports.createTrip = async (req, res) => {
   try {
     const { name, start_date, end_date, participants } = req.body;
 
+    if (!name || !start_date || !end_date) {
+      return res.status(400).json({ error: "Required fields are missing" });
+    }
+
     const participantsObjectIds = await Promise.all(
       participants.map(async (username) => {
         const user = await User.findOne({ username });
@@ -23,11 +27,13 @@ exports.createTrip = async (req, res) => {
       participants,
     });
 
-    await newTrip.save();
-    res.status(201).json(newTrip);
-  } catch (error) {
-    console.error("Error creating trip:", error);
-    res.status(500).json({ error: "Failed to create trip" });
+-
+    await trip.save();
+    res.status(201).json({ message: "Trip created", trip });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: "Server error creating trip" });
+
   }
 };
 
@@ -139,14 +145,11 @@ exports.deleteTrip = async (req, res) => {
   try {
     const tripId = req.params.id;
 
-    
-    await Participant.deleteMany({ trip_id: tripId });
 
-   
-    const trip = await Trip.findByIdAndDelete(tripId);
-    if (!trip) {
-      return res.status(404).json({ error: "Trip not found" });
-    }
+    await Bill.deleteMany({ trip_id: trip._id });
+    await Participant.deleteMany({ trip_id: trip._id });
+
+    await trip.deleteOne();
 
     res
       

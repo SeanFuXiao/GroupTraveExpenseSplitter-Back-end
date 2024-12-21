@@ -11,11 +11,12 @@ const authMiddleware = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
+// Public Routes
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.get("/exists/:username", checkUsernameExists);
 
-// Protected routes
+// Protected Routes
 router.get("/:id", authMiddleware, getUserById);
 router.put("/:id", authMiddleware, updateUser);
 router.delete("/:id", authMiddleware, deleteUser);
